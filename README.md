@@ -1,129 +1,133 @@
 1. Implement a circular queue,write functions: read_queue(), write_queue(), clear_queue(),When the queue is full, write queue should overwrite oldest data.
 
     PROGRAME
-
 #include <stdio.h>
 #include <stdlib.h>
 
-#define MAX_SIZE 5
+#define MAX_QUEUE_SIZE 5
 
-// Structure to represent the circular queue
-struct CircularQueue {
-    int *array;
-    int front, rear;
-    unsigned capacity;
+typedef struct {
+    int* array;
+    int front;
+    int rear;
     int size;
-};
+} CircularQueue;
 
-// Function to initialize a circular queue
-struct CircularQueue* initializeQueue(unsigned capacity) {
-    struct CircularQueue* queue = (struct CircularQueue*)malloc(sizeof(struct CircularQueue));
-    queue->capacity = capacity;
-    queue->array = (int*)malloc(queue->capacity * sizeof(int));
-    queue->front = queue->size = 0;
-    queue->rear = capacity - 1;
-    return queue;
-}
-
-// Function to check if the queue is full
-int isFull(struct CircularQueue* queue) {
-    return (queue->size == queue->capacity);
+// Function to initialize the circular queue
+void initializeQueue(CircularQueue* queue, int size) {
+    queue->array = (int*)malloc(size * sizeof(int));
+    queue->front = -1;
+    queue->rear = -1;
+    queue->size = size;
 }
 
 // Function to check if the queue is empty
-int isEmpty(struct CircularQueue* queue) {
-    return (queue->size == 0);
+int isEmpty(CircularQueue* queue) {
+    return (queue->front == -1);
 }
 
-// Function to write data to the queue
-void write_queue(struct CircularQueue* queue, int data) {
+// Function to check if the queue is full
+int isFull(CircularQueue* queue) {
+    return ((queue->rear + 1) % queue->size == queue->front);
+}
+
+// Function to write data to the circular queue
+void writeQueue(CircularQueue* queue, int data) {
     if (isFull(queue)) {
         // If the queue is full, overwrite the oldest data
-        queue->front = (queue->front + 1) % queue->capacity;
+        queue->front = (queue->front + 1) % queue->size;
     }
 
-    // Move the rear pointer circularly
-    queue->rear = (queue->rear + 1) % queue->capacity;
-
-    // Add the new data to the queue
+    // Move the rear pointer and write data
+    queue->rear = (queue->rear + 1) % queue->size;
     queue->array[queue->rear] = data;
-    
-    // Increase the size of the queue
-    queue->size++;
+
+    // If the queue was empty, set the front pointer
+    if (isEmpty(queue)) {
+        queue->front = queue->rear;
+    }
 }
 
-// Function to read data from the queue
-int read_queue(struct CircularQueue* queue) {
-    if (isEmpty(queue)) {
-        printf("Queue is empty\n");
-        return -1; // Return a sentinel value for an empty queue
+// Function to read data from the circular queue
+int readQueue(CircularQueue* queue) {
+    int data = -1;
+
+    if (!isEmpty(queue)) {
+        data = queue->array[queue->front];
+
+        // If there was only one element in the queue, reset front and rear pointers
+        if (queue->front == queue->rear) {
+            queue->front = -1;
+            queue->rear = -1;
+        } else {
+            // Move the front pointer
+            queue->front = (queue->front + 1) % queue->size;
+        }
     }
-
-    // Get the front element of the queue
-    int data = queue->array[queue->front];
-
-    // Move the front pointer circularly
-    queue->front = (queue->front + 1) % queue->capacity;
-
-    // Decrease the size of the queue
-    queue->size--;
 
     return data;
 }
 
-// Function to clear the queue
-void clear_queue(struct CircularQueue* queue) {
-    // Reset front, rear, and size to make the queue empty
-    queue->front = queue->size = 0;
-    queue->rear = queue->capacity - 1;
+// Function to clear the circular queue
+void clearQueue(CircularQueue* queue) {
+    queue->front = -1;
+    queue->rear = -1;
 }
 
-// Function to print the elements of the queue
-void printQueue(struct CircularQueue* queue) {
+// Function to display the circular queue
+void displayQueue(CircularQueue* queue) {
+    int i;
     if (isEmpty(queue)) {
         printf("Queue is empty\n");
-        return;
+    } else {
+        printf("Queue elements: ");
+        for (i = queue->front; i != queue->rear; i = (i + 1) % queue->size) {
+            printf("%d ", queue->array[i]);
+        }
+        printf("%d\n", queue->array[i]);
     }
-
-    printf("Queue elements: ");
-    for (int i = 0; i < queue->size; i++) {
-        printf("%d ", queue->array[(queue->front + i) % queue->capacity]);
-    }
-    printf("\n");
 }
 
-// Driver program for testing the circular queue
-int main() {
-    struct CircularQueue* queue = initializeQueue(MAX_SIZE);
-
-    write_queue(queue, 1);
-    write_queue(queue, 2);
-    write_queue(queue, 3);
-    write_queue(queue, 4);
-    write_queue(queue, 5);
-    printQueue(queue);
-
-    write_queue(queue, 6); // Overwrite the oldest data (1)
-    printQueue(queue);
-
-    int readData = read_queue(queue);
-    printf("Read from queue: %d\n", readData);
-    printQueue(queue);
-
-    clear_queue(queue);
-    printQueue(queue);
-
+// Function to free memory used by the circular queue
+void freeQueue(CircularQueue* queue) {
     free(queue->array);
-    free(queue);
+}
+
+int main() {
+    CircularQueue myQueue;
+    initializeQueue(&myQueue, MAX_QUEUE_SIZE);
+
+    // Writing data to the queue
+    writeQueue(&myQueue, 1);
+    writeQueue(&myQueue, 2);
+    writeQueue(&myQueue, 3);
+    displayQueue(&myQueue);
+
+    // Reading data from the queue
+    int readData = readQueue(&myQueue);
+    printf("Read data: %d\n", readData);
+    displayQueue(&myQueue);
+
+    // Writing more data to the queue
+    writeQueue(&myQueue, 4);
+    writeQueue(&myQueue, 5);
+    writeQueue(&myQueue, 6);
+    displayQueue(&myQueue);
+
+    // Clearing the queue
+    clearQueue(&myQueue);
+    displayQueue(&myQueue);
+
+    // Freeing memory
+    freeQueue(&myQueue);
 
     return 0;
 }
-
           OUTPUT
-Queue elements: 1 2 3 4 5 
-Queue elements: 2 3 4 5 6 2 
-Read from queue: 2
-Queue elements: 3 4 5 6 2 
+Queue elements: 1 2 3
+Read data: 1
+Queue elements: 2 3
+Queue elements: 2 3 4 5 6
 Queue is empty
 
 2. Write a function to extract the payload from the given data and return the payload data in a new array to the calling function
